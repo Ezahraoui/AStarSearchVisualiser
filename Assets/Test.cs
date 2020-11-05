@@ -8,7 +8,7 @@ public class Test : MonoBehaviour
     private Grid grid;
     void Start()
     {
-        Grid grid = new Grid(4, 2, 10f);
+        grid = new Grid(4, 2, 10f, new Vector3(20,0));
 
     }
 
@@ -16,7 +16,12 @@ public class Test : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
+            Debug.Log(grid);
             grid.setValue(UtilsClass.GetMouseWorldPosition(),56);
+        }
+        if (Input.GetMouseButtonDown(1))
+        {
+            Debug.Log(grid.getValue(UtilsClass.GetMouseWorldPosition()));
         }
     }
 }

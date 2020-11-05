@@ -8,13 +8,15 @@ public class Grid
     private int width;
     private int height;
     private float cellSize;
+    private Vector3 originPos;
     private int[,] twoDimArray;
     private TextMesh[,] debugTextArray;
-    public Grid(int width, int height, float cellSize)
+    public Grid(int width, int height, float cellSize, Vector3 originPos)
     {
         this.width = width;
         this.height = height;
         this.cellSize = cellSize;
+        this.originPos = originPos;
         twoDimArray = new int[width, height];
         //Debug.Log(width + " " + height);
         debugTextArray = new TextMesh[width, height];
@@ -35,7 +37,7 @@ public class Grid
     }
     private Vector3 GetWorldPosition(int i, int j)
     {
-        return new Vector3(i, j) * cellSize;
+        return new Vector3(i, j) * cellSize + originPos;
     }
     public void setValue(int i, int j, int value)
     {
@@ -53,8 +55,8 @@ public class Grid
 
     private void getCoordinates(Vector3 worldPos, out int i, out int j)
     {
-        i = Mathf.FloorToInt(worldPos.x / cellSize);
-        j = Mathf.FloorToInt(worldPos.y / cellSize);
+        i = Mathf.FloorToInt((worldPos - originPos).x / cellSize);
+        j = Mathf.FloorToInt((worldPos - originPos).y / cellSize);
     }
 
       public void setValue(Vector3 worldPos, int value)
@@ -62,5 +64,22 @@ public class Grid
         int i, j;
         getCoordinates(worldPos, out i, out j);
         setValue(i, j, value);
+    }
+        public int getValue(int i, int j)
+        {
+            if(i>=0 && j>=0 && i<width && j < height)
+        {
+            return twoDimArray[i, j];
+        } else
+        {
+            return 0;
+        }
+        }
+
+    public int getValue(Vector3 worldPos)
+    {
+        int i, j;
+        getCoordinates(worldPos, out i, out j);
+        return getValue(i, j);
     }
 }
