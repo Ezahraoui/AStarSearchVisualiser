@@ -1,149 +1,85 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Code.Utils;
 
-public class Grid<TGridObject>
+public class Grid
 {
-
-    public event EventHandler<OnGridObjectChangedEventArgs> OnGridObjectChanged;
-    public class OnGridObjectChangedEventArgs : EventArgs
-    {
-        public int x;
-        public int y;
-    }
-
     private int width;
     private int height;
     private float cellSize;
-    private Vector3 originPosition;
-    private TGridObject[,] gridArray;
-
-    private int fontSize = 200;
-
-    public Grid(int width, int height, float cellSize, Vector3 originPosition, Func<Grid<TGridObject>, int, int, TGridObject> createGridObject)
+    private Vector3 originPos;
+    private int[,] twoDimArray;
+    private TextMesh[,] debugTextArray;
+    public Grid(int width, int height, float cellSize, Vector3 originPos)
     {
-
         this.width = width;
         this.height = height;
         this.cellSize = cellSize;
-        this.originPosition = originPosition;
+        this.originPos = originPos;
+        twoDimArray = new int[width, height];
+        //Debug.Log(width + " " + height);
+        debugTextArray = new TextMesh[width, height];
 
-        gridArray = new TGridObject[width, height];
-
-        for (int x = 0; x < gridArray.GetLength(0); x++)
+        for (int i=0; i< twoDimArray.GetLength(0); i++)
         {
-            for (int y = 0; y < gridArray.GetLength(1); y++)
+            for(int j = 0; j < twoDimArray.GetLength(1); j++)
             {
-                gridArray[x, y] = createGridObject(this, x, y);
+                debugTextArray[i,j] = UtilsClass.CreateWorldText(twoDimArray[i,j].ToString(), null, GetWorldPosition(i,j) + new Vector3(cellSize, cellSize) * .5f, 20, Color.white, TextAnchor.MiddleCenter);
+                Debug.DrawLine(GetWorldPosition(i, j), GetWorldPosition(i, j + 1), Color.white, 100f);
+                Debug.DrawLine(GetWorldPosition(i, j), GetWorldPosition(i+1, j), Color.white, 100f);
             }
         }
+        Debug.DrawLine(GetWorldPosition(0, height), GetWorldPosition(width, height), Color.white, 100f);
+        Debug.DrawLine(GetWorldPosition(width, 0), GetWorldPosition(width, height), Color.white, 100f);
 
-        bool showDebug = true;
-        if (showDebug)
+        setValue(2, 1, 56);
+    }
+    private Vector3 GetWorldPosition(int i, int j)
+    {
+        return new Vector3(i, j) * cellSize + originPos;
+    }
+    public void setValue(int i, int j, int value)
+    {
+        if(i >=0 && i>=0 && i <width && j < height)
         {
-            TextMesh[,] debugTextArray = new TextMesh[width, height];
-
-            for (int x = 0; x < gridArray.GetLength(0); x++)
-            {
-                for (int y = 0; y < gridArray.GetLength(1); y++)
-                {
-                    //debugTextArray[x, y] = UtilsClass.CreateWorldText(gridArray[x, y]?.ToString(), null, GetWorldPosition(x, y) + new Vector3(cellSize, cellSize) * .5f, 30, Color.white, TextAnchor.MiddleCenter);
-                    debugTextArray[x, y] = CreateWorldText(null, gridArray[x, y]?.ToString(), GetWorldPosition(x, y) + new Vector3(cellSize, cellSize) * .5f, fontSize, 0.03f, Color.white, TextAnchor.MiddleCenter, TextAlignment.Center);
-                    Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.white, 100f);
-                    Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.white, 100f);
-                }
-            }
-            Debug.DrawLine(GetWorldPosition(0, height), GetWorldPosition(width, height), Color.white, 100f);
-            Debug.DrawLine(GetWorldPosition(width, 0), GetWorldPosition(width, height), Color.white, 100f);
-
-            OnGridObjectChanged += (object sender, OnGridObjectChangedEventArgs eventArgs) => {
-                debugTextArray[eventArgs.x, eventArgs.y].text = gridArray[eventArgs.x, eventArgs.y]?.ToString();
-            };
+            twoDimArray[i, j] = value;
+            debugTextArray[i, j].text = twoDimArray[i, j].ToString();
         }
     }
 
-    public int GetWidth()
+    private Vector3 getWorldPos(int i , int j)
     {
-        return width;
+        return new Vector3(i, j) * cellSize;
     }
 
-    public int GetHeight()
+    private void getCoordinates(Vector3 worldPos, out int i, out int j)
     {
-        return height;
+        i = Mathf.FloorToInt((worldPos - originPos).x / cellSize);
+        j = Mathf.FloorToInt((worldPos - originPos).y / cellSize);
     }
 
-    public float GetCellSize()
+      public void setValue(Vector3 worldPos, int value)
     {
-        return cellSize;
+        int i, j;
+        getCoordinates(worldPos, out i, out j);
+        setValue(i, j, value);
     }
-
-    public Vector3 GetWorldPosition(int x, int y)
-    {
-        return new Vector3(x, y) * cellSize + originPosition;
-    }
-
-    public void GetXY(Vector3 worldPosition, out int x, out int y)
-    {
-        x = Mathf.FloorToInt((worldPosition - originPosition).x / cellSize);
-        y = Mathf.FloorToInt((worldPosition - originPosition).y / cellSize);
-    }
-
-    public void SetGridObject(int x, int y, TGridObject value)
-    {
-        if (x >= 0 && y >= 0 && x < width && y < height)
+        public int getValue(int i, int j)
         {
-            gridArray[x, y] = value;
-            if (OnGridObjectChanged != null) OnGridObjectChanged(this, new OnGridObjectChangedEventArgs { x = x, y = y });
-        }
-    }
-
-    public void TriggerGridObjectChanged(int x, int y)
-    {
-        if (OnGridObjectChanged != null) OnGridObjectChanged(this, new OnGridObjectChangedEventArgs { x = x, y = y });
-    }
-
-    public void SetGridObject(Vector3 worldPosition, TGridObject value)
-    {
-        int x, y;
-        GetXY(worldPosition, out x, out y);
-        SetGridObject(x, y, value);
-    }
-
-    public TGridObject GetGridObject(int x, int y)
-    {
-        if (x >= 0 && y >= 0 && x < width && y < height)
+            if(i>=0 && j>=0 && i<width && j < height)
         {
-            return gridArray[x, y];
-        }
-        else
+            return twoDimArray[i, j];
+        } else
         {
-            return default(TGridObject);
+            return 0;
         }
-    }
+        }
 
-    public TGridObject GetGridObject(Vector3 worldPosition)
+    public int getValue(Vector3 worldPos)
     {
-        int x, y;
-        GetXY(worldPosition, out x, out y);
-        return GetGridObject(x, y);
+        int i, j;
+        getCoordinates(worldPos, out i, out j);
+        return getValue(i, j);
     }
-
-    public TextMesh CreateWorldText(Transform parent, string text, Vector3 localPosition, int fontSize, float charSize, Color color, TextAnchor textAnchor, TextAlignment textAlignment)
-    {
-        GameObject gameObject = new GameObject("World_Text", typeof(TextMesh));
-        Transform transform = gameObject.transform;
-        transform.SetParent(parent, false);
-        transform.localPosition = localPosition;
-        TextMesh textMesh = gameObject.GetComponent<TextMesh>();
-        textMesh.anchor = textAnchor;
-        textMesh.alignment = textAlignment;
-        textMesh.text = text;
-        textMesh.characterSize = charSize;
-        textMesh.fontSize = fontSize;
-        textMesh.color = color;
-
-        return textMesh;
-    }
-
 }
